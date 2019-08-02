@@ -4,7 +4,8 @@ import ReactDOM from 'react-dom';
 import App from './components/App';
 
 import './utils/firebase';
-import './index.css';
+import './styles/index.css';
+import './styles/normalize.css';
 
 ReactDOM.render(
   <App />, 

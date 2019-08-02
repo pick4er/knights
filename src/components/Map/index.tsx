@@ -1,7 +1,40 @@
+import React, { PureComponent } from 'react';
 import mapboxgl from 'mapbox-gl';
 
-mapboxgl.accessToken = 'pk.eyJ1IjoidmpvYmVyIiwiYSI6ImNqeXR2cTRsNTA1OHAzZG55MHBjeGNqZngifQ.P3zuGEjdFNusepcEdz4Z0Q';
-let map = new mapboxgl.Map({
-  container: 'map',
-  style: 'mapbox://styles/vjober/cjytz9ox70onl1cmup6h3kkuv'
-});
+import { 
+  MAP_ACCESS_TOKEN,
+  MAP_STYLE,
+} from '../../utils/constants';
+
+mapboxgl.accessToken = MAP_ACCESS_TOKEN;
+
+type MapState = {
+  map: object,
+}
+
+class Map extends PureComponent<{}, MapState> {
+  state = {
+    map: {},
+  }
+
+  componentDidMount() {
+    this.initMapBox();
+  }
+
+  initMapBox() {
+    this.setState({
+      map: new mapboxgl.Map({
+        container: 'map',
+        style: MAP_STYLE,
+      }),
+    });
+  }
+
+  render() {
+    return (
+      <div />
+    )
+  }
+}
+
+export default Map;
