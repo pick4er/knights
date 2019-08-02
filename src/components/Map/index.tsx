@@ -1,4 +1,4 @@
-import React, { PureComponent } from 'react';
+import React from 'react';
 import mapboxgl from 'mapbox-gl';
 
 import { 
@@ -8,33 +8,25 @@ import {
 
 mapboxgl.accessToken = MAP_ACCESS_TOKEN;
 
-type MapState = {
-  map: object,
+type MapProps = {
+  knights: object[],
 }
 
-class Map extends PureComponent<{}, MapState> {
-  state = {
-    map: {},
-  }
+const Map: React.FC<MapProps> = ({ knights }) => {
+  const [map, setMap] = React.useState({});
 
-  componentDidMount() {
-    this.initMapBox();
-  }
-
-  initMapBox() {
-    this.setState({
-      map: new mapboxgl.Map({
+  React.useEffect(() => {
+    setMap(
+      new mapboxgl.Map({
         container: 'map',
         style: MAP_STYLE,
       }),
-    });
-  }
+    );
+  }, []);
 
-  render() {
-    return (
-      <div />
-    )
-  }
+  return (
+    <div />
+  )
 }
 
 export default Map;

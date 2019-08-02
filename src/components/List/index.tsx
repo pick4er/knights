@@ -1,23 +1,51 @@
 import React from 'react';
 
-import { database } from '../../utils/firebase';
+import './index.css';
 
-const List: React.FC = () => {
-  React.useEffect(() => {
-    const roadsRef = database
-      .ref('/')
-      .orderByKey()
-      .limitToFirst(100);
+type KnightType = {
+  bikeid: number,
+  starttime: string,
+  tripduration: number,
+  ['start station name']: string,
+  ['end station name']: string,
+}
 
-    roadsRef
-      .once('value')
-      .then(snapshot => {
-        console.log('shapshot.val():', snapshot.val());
-      });
-  });
+type ListProps = {
+  knights: KnightType[],
+}
 
+const List: React.FC<ListProps> = ({ knights }) => {
   return (
-    <div />
+    <div className="Knights">
+      <div className="Scroller">
+        <table>
+          <thead>
+            <tr>
+              <th>Start</th>
+              <th>End</th>
+              <th>Duration</th>
+            </tr>
+          </thead>
+          <tbody>
+            { knights.map((knight: KnightType) => {
+                const { 
+                  bikeid, 
+                  starttime, 
+                  tripduration,
+                } = knight;
+
+                return (
+                  <tr key={`${bikeid} ${starttime}`}>
+                    <td>{ knight['start station name'] }</td>
+                    <td>{ knight['end station name'] }</td>
+                    <td>{ tripduration }</td>
+                  </tr>
+                )
+            }) }
+          </tbody>
+        </table>
+      </div>
+    </div>
   )
 }
 
