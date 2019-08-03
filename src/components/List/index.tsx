@@ -1,20 +1,20 @@
 import React from 'react';
 
+import { IKinght } from '../../types';
+
 import './index.css';
 
-type KnightType = {
-  bikeid: number,
-  starttime: string,
-  tripduration: number,
-  ['start station name']: string,
-  ['end station name']: string,
+interface ListProps {
+  knights: IKinght[];
+  onKnightHover: (knight: IKinght) => void;
+  onKnightLeave?: () => void;
 }
 
-type ListProps = {
-  knights: KnightType[],
-}
-
-const List: React.FC<ListProps> = ({ knights }) => {
+const List: React.FC<ListProps> = ({ 
+  knights, 
+  onKnightHover, 
+  onKnightLeave,
+}) => {
   return (
     <div className="Knights">
       <div className="Scroller">
@@ -27,7 +27,7 @@ const List: React.FC<ListProps> = ({ knights }) => {
             </tr>
           </thead>
           <tbody>
-            { knights.map((knight: KnightType) => {
+            { knights.map((knight: IKinght) => {
                 const { 
                   bikeid, 
                   starttime, 
@@ -35,7 +35,11 @@ const List: React.FC<ListProps> = ({ knights }) => {
                 } = knight;
 
                 return (
-                  <tr key={`${bikeid} ${starttime}`}>
+                  <tr 
+                    key={`${bikeid} ${starttime}`} 
+                    onMouseEnter={() => onKnightHover(knight)}
+                    onMouseLeave={onKnightLeave}
+                  >
                     <td>{ knight['start station name'] }</td>
                     <td>{ knight['end station name'] }</td>
                     <td>{ tripduration }</td>
