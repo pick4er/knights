@@ -1,12 +1,12 @@
 import React from 'react';
 
-import { IKinght } from '../../types';
+import { IKnight } from '../../types';
 
 import './index.css';
 
 interface ListProps {
-  knights: IKinght[];
-  onKnightHover: (knight: IKinght) => void;
+  knights: IKnight[];
+  onKnightHover: (knight: IKnight) => void;
   onKnightLeave?: () => void;
 }
 
@@ -27,7 +27,7 @@ const List: React.FC<ListProps> = ({
             </tr>
           </thead>
           <tbody>
-            { knights.map((knight: IKinght) => {
+            { knights.map((knight: IKnight) => {
                 const { 
                   bikeid, 
                   starttime, 

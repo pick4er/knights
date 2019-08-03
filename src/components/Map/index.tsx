@@ -1,8 +1,10 @@
 import React from 'react';
 import mapboxgl, { Map as MapType } from 'mapbox-gl';
 
+import Marker from '../Marker';
+
 import { 
-  IKinght,
+  IKnight,
   IPulsingDot,
 } from '../../types';
 import { 
@@ -12,21 +14,26 @@ import {
 
 mapboxgl.accessToken = MAP_ACCESS_TOKEN;
 
-interface MapProps {
-  knights: IKinght[];
-  hoveredKnight?: object;
+interface IMapProps {
+  knights: IKnight[];
+  hoveredKnight?: IKnight | null;
 }
 
-interface MapState {
+interface IMapState {
   map: MapType | null;
   setMap: any | null;
+  markers: IRides | null;
+  setMarkers: any | null;
+  activatedMarkers: string[];
+  setActivatedMarkers: any | null;
 }
 
-function encodeKnightsToGeoJson(knights: IKinght[]): any[] {
+function encodeKnightsToGeoJson(knights: IKnight[]): any[] {
   return knights.map(knight => ({
     type: 'Feature',
     properties: {
       title: knight['end station name'],
+      iconSize: [20, 20],
     },
     geometry: {
       type: 'Point',
@@ -92,45 +99,79 @@ function getPulsingDot(map: MapType): IPulsingDot {
   }
 }
 
-function onMapLoad(state: MapState, props: MapProps) {
+interface IRides {
+  [name: string]: any;
+}
+
+function getKnightId(knight: IKnight): string {
+  return `${knight['bikeid']}-${knight['starttime']}`;
+}
+
+function mapOnLoad(state: IMapState, props: IMapProps) {
   return function loadHandler() {
-    const { map } = state;
+    const { map, setMarkers } = state;
     const { knights } = props;
+    const knightRides: IRides = {};
 
     if (map === null) return;
 
-    const geoJsonKnights = encodeKnightsToGeoJson(knights);
+    knights.forEach(knight => {
+      const startStationMarker = new Marker(knight, map);
+      const endStationMarker = new Marker(knight, map);
 
-    map.addSource('knights', {
-      type: 'geojson',
-      data: {
-        type: 'FeatureCollection',
-        features: geoJsonKnights,
-      },
+      knightRides[getKnightId(knight)] = [
+        startStationMarker, 
+        endStationMarker,
+      ];
+
+      new mapboxgl.Marker({ element: startStationMarker.element })
+        .setLngLat([
+          knight['start station longitude'] as number, 
+          knight['start station latitude'] as number,
+        ])
+        .addTo(map);
+
+      new mapboxgl.Marker({ element: endStationMarker.element })
+        .setLngLat([
+          knight['end station longitude'] as number,
+          knight['end station latitude'] as number,
+        ])
+        .addTo(map);
     });
 
-    map.addImage('pulsing-dot', getPulsingDot(map), { pixelRatio: 2 });
-
-    map.addLayer({
-      id: 'destinations',
-      type: 'symbol',
-      source: 'knights',
-      layout: {
-        'icon-image': 'pulsing-dot',
-      }
-    });
+    setMarkers(knightRides);
   }
 }
 
-const Map: React.FC<MapProps> = ({ 
+function freeActivatedMarkers(state: IMapState, props: IMapProps): void {
+  const { 
+    markers,
+    activatedMarkers, 
+    setActivatedMarkers,
+  } = state;
+
+  if (markers === null) return;
+
+  activatedMarkers.forEach(markerId => {
+    markers[markerId].forEach((marker: IRides) => marker.deactivate());
+  });
+}
+
+const Map: React.FC<IMapProps> = ({ 
   knights, 
-  hoveredKnight = {},
+  hoveredKnight = null,
 }) => {
   const [map, setMap] = React.useState<MapType | null>(null);
+  const [markers, setMarkers] = React.useState<IRides | null>(null);
+  const [activatedMarkers, setActivatedMarkers] = React.useState<string[]>([]);
 
   const state = {
     map,
     setMap,
+    markers,
+    setMarkers,
+    activatedMarkers,
+    setActivatedMarkers,
   }
 
   const props = {
@@ -145,13 +186,27 @@ const Map: React.FC<MapProps> = ({
         style: MAP_STYLE,
       })
     );
+
+    return () => map!.remove();
   }, []);
 
   React.useEffect(() => {
     if (map === null) return;
     if (knights.length === 0) return;
-    map.on('load', onMapLoad(state, props));
+    map.on('load', mapOnLoad(state, props));
   }, [knights, map]);
+
+  React.useEffect(() => {
+    if (markers === null) return;
+    if (hoveredKnight === null) {
+      freeActivatedMarkers(state, props);
+      return;
+    };
+
+    const hoveredKnightId = getKnightId(hoveredKnight);
+    markers[hoveredKnightId].forEach((marker: IRides) => marker.activate());
+    setActivatedMarkers(activatedMarkers.concat(hoveredKnightId));
+  }, [hoveredKnight, markers]);
 
   return (
     <div />

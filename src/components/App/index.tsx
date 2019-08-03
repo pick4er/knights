@@ -4,6 +4,7 @@ import debounce from 'lodash.debounce';
 import Map from '../Map';
 import List from '../List';
 
+import { IKnight } from '../../types';
 import { database } from '../../utils/firebase';
 import './index.css';
 
@@ -12,11 +13,11 @@ let debouncedKnightLeave: any;
 
 const App: React.FC = () => {
   const [knights, setKnights] = React.useState([]);
-  const [hoveredKnight, setHoveredKnight] = React.useState({});
+  const [hoveredKnight, setHoveredKnight] = React.useState<IKnight | null>(null);
 
   React.useEffect(() => {
     debouncedKnightHover = debounce(setHoveredKnight, 1000);
-    debouncedKnightLeave = debounce(() => setHoveredKnight({}), 1000);
+    debouncedKnightLeave = debounce(() => setHoveredKnight(null), 1000);
   }, []);
 
   React.useEffect(() => {

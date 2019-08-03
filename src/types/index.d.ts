@@ -1,5 +1,5 @@
 
-export interface IKinght {
+export interface IKnight {
   ['bikeid']: number;
   ['starttime']: string;
   ['tripduration']: number;
@@ -19,11 +19,17 @@ export interface IKinght {
   ['usertype']: string;
 }
 
+export interface IGeoJsonKnight {
+  type: string;
+  properties: object;
+  geometry: object;
+}
+
 export interface IPulsingDot {
   width: number;
   height: number;
   data: any;
   context: CanvasRenderingContext2D | null;
-  onAdd(): void;
+  onAdd();
   render(): boolean;
 }
