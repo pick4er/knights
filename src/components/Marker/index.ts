@@ -6,9 +6,10 @@ import MarkerPopupType from '../Popup';
 export default class Marker {
   popup: MarkerPopupType;
   map: MapType;
+  width: number;
+  height: number;
 
   private _radius: number;
-  private _activeRadius: number;
   private _element: HTMLCanvasElement;
   private _context: CanvasRenderingContext2D | null;
 
@@ -16,14 +17,16 @@ export default class Marker {
     const { 
       map,
       popup,
+      width,
+      height,
       radius = 10,
-      activeRadius,
     } = params;
 
     this.map = map;
     this.popup = popup;
+    this.width = width;
+    this.height = height;
     this._radius = radius;
-    this._activeRadius = activeRadius;
     this._element = this.createElement();
     this._context = this.element.getContext('2d');
 
@@ -32,14 +35,6 @@ export default class Marker {
 
   get element(): HTMLCanvasElement {
     return this._element;
-  }
-
-  get width(): number {
-    return this._activeRadius * 2 + 3; // a bit of spacing
-  }
-
-  get height(): number {
-    return this._activeRadius * 2 + 3; // a bit of spacing
   }
 
   createElement(): HTMLCanvasElement {
@@ -61,8 +56,8 @@ export default class Marker {
     context.fill();
   }
 
-  activate() {
-    this.renderElement(this._activeRadius, 'rgba(255, 100, 200, 1)');
+  activate(radius: number) {
+    this.renderElement(radius, 'rgba(200, 0, 255, 1)');
     this.popup.openPopup();
     this.map.triggerRepaint();
   }

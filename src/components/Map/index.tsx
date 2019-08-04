@@ -4,7 +4,7 @@ import mapboxgl, { Map as MapType } from 'mapbox-gl';
 import Marker from '../Marker';
 import Popup from '../Popup';
 
-import { IRides, IKnight } from '../../types';
+import { IRides, IKnight, IMarkers } from '../../types';
 import { 
   MAP_ACCESS_TOKEN,
   MAP_STYLE,
@@ -13,6 +13,8 @@ import {
 mapboxgl.accessToken = MAP_ACCESS_TOKEN;
 const MIN_ACTIVE_RADIUS = 12;
 const MAX_ACTIVE_RADIUS = 30;
+const WIDTH = 100;
+const HEIGHT = 100;
 const RADIUS = 10;
 
 interface IMapProps {
@@ -25,6 +27,8 @@ interface IMapState {
   setMap: any | null;
   rides: IRides | null;
   setRides: any | null;
+  markers: IMarkers | null;
+  setMarkers: any | null;
   activatedRides: string[];
   setActivatedRides: any | null;
 }
@@ -50,75 +54,97 @@ function getKnightActiveRadius(knight: IKnight, maxDuration: number): number {
 
 function mapOnLoad(state: IMapState, props: IMapProps) {
   return function loadHandler() {
-    const { map, setRides } = state;
+    const { map, setRides, setMarkers } = state;
     const { knights } = props;
+
     const knightRides: IRides = {};
+    const markers: IMarkers = {};
 
     if (map === null) return;
 
-    const maxTripduration = getMaxTripduration(knights);
     const startPopup = new mapboxgl.Popup();
     const endPopup = new mapboxgl.Popup();
 
-    knights.forEach(knight => {
-      const activeRadius = getKnightActiveRadius(
-        knight, 
-        maxTripduration,
-      );
+    knights.forEach((knight): void => {
+      const startStationId = knight['start station id'];
+      const endStationId = knight['end station id'];
 
-      const startMarkerPopup = new Popup({
-        map: map,
-        popup: startPopup,
-        content: knight['start station name'],
-        coordinates: [
-          knight['start station longitude'] as number, 
-          knight['start station latitude'] as number,
-        ],
-      });
-      const endMarkerPopup = new Popup({
-        map: map,
-        popup: endPopup,
-        content: knight['end station name'],
-        coordinates: [
-          knight['end station longitude'] as number, 
-          knight['end station latitude'] as number,
-        ],
-      });
+      let startMarkerPopup;
+      let startStationMarker;
 
-      const startStationMarker = new Marker({
-        map, 
-        activeRadius,
-        radius: RADIUS,
-        popup: startMarkerPopup,
-      });
-      const endStationMarker = new Marker({
-        map, 
-        activeRadius,
-        radius: RADIUS,
-        popup: endMarkerPopup,
-      });
+      if (!markers[startStationId]) {
+        startMarkerPopup = new Popup({
+          map: map,
+          popup: startPopup,
+          content: knight['start station name'],
+          coordinates: [
+            knight['start station longitude'] as number, 
+            knight['start station latitude'] as number,
+          ],
+        });
+
+        startStationMarker = new Marker({
+          map, 
+          width: WIDTH,
+          height: HEIGHT,
+          radius: RADIUS,
+          popup: startMarkerPopup,
+        });
+
+        markers[startStationId] = startStationMarker;
+
+        new mapboxgl.Marker({ element: startStationMarker.element })
+          .setLngLat([
+            knight['start station longitude'] as number, 
+            knight['start station latitude'] as number,
+          ])
+          .addTo(map);
+      } else {
+        startStationMarker = markers[startStationId];
+      }
+
+      let endMarkerPopup;
+      let endStationMarker;
+
+      if (!markers[endStationId]) {
+        endMarkerPopup = new Popup({
+          map: map,
+          popup: endPopup,
+          content: knight['end station name'],
+          coordinates: [
+            knight['end station longitude'] as number, 
+            knight['end station latitude'] as number,
+          ],
+        });
+
+        endStationMarker = new Marker({
+          map, 
+          width: WIDTH,
+          height: HEIGHT,
+          radius: RADIUS,
+          popup: endMarkerPopup,
+        });
+
+        markers[endStationId] = endStationMarker;
+
+        new mapboxgl.Marker({ element: endStationMarker.element })
+          .setLngLat([
+            knight['end station longitude'] as number,
+            knight['end station latitude'] as number,
+          ])
+          .addTo(map);
+      } else {
+        endStationMarker = markers[endStationId];
+      }
 
       knightRides[getKnightId(knight)] = [
         startStationMarker, 
         endStationMarker,
       ];
-
-      new mapboxgl.Marker({ element: startStationMarker.element })
-        .setLngLat([
-          knight['start station longitude'] as number, 
-          knight['start station latitude'] as number,
-        ])
-        .addTo(map);
-
-      new mapboxgl.Marker({ element: endStationMarker.element })
-        .setLngLat([
-          knight['end station longitude'] as number,
-          knight['end station latitude'] as number,
-        ])
-        .addTo(map);
     });
 
     setRides(knightRides);
+    setMarkers(markers);
   }
 }
 
@@ -143,12 +169,16 @@ const Map: React.FC<IMapProps> = ({
   const [map, setMap] = React.useState<MapType | null>(null);
   const [rides, setRides] = React.useState<IRides | null>(null);
   const [activatedRides, setActivatedRides] = React.useState<string[]>([]);
+  const [markers, setMarkers] = React.useState<IMarkers | null>(null);
+  const [maxTripduration, setMaxTripduration] = React.useState<number>(0);
 
   const state = {
     map,
     setMap,
     rides,
     setRides,
+    markers,
+    setMarkers,
     activatedRides,
     setActivatedRides,
   }
@@ -172,6 +202,12 @@ const Map: React.FC<IMapProps> = ({
   }, []);
 
   React.useEffect(() => {
+    setMaxTripduration(
+      getMaxTripduration(knights),
+    );
+  }, [knights]);
+
+  React.useEffect(() => {
     if (map === null) return;
     if (knights.length === 0) return;
 
@@ -182,8 +218,10 @@ const Map: React.FC<IMapProps> = ({
     if (rides === null) return;
     if (hoveredKnight === null) return deactivateRides(state, props);
 
+    const activeRadius = getKnightActiveRadius(hoveredKnight, maxTripduration);
     const hoveredKnightId = getKnightId(hoveredKnight);
-    rides[hoveredKnightId].forEach((marker: Marker) => marker.activate());
+
+    rides[hoveredKnightId].forEach((marker: Marker) => marker.activate(activeRadius));
     setActivatedRides(activatedRides.concat(hoveredKnightId));
   }, [hoveredKnight, rides]);
 

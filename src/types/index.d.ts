@@ -36,7 +36,8 @@ export interface IMarkerParams {
   map: MapType;
   popup: MarkerPopupType;
   radius?: number;
-  activeRadius: number;
+  width: number;
+  height: number;
 }
 
 export interface IRides {
@@ -48,4 +49,8 @@ export interface IPopupParams {
   content: string;
   coordinates: number[];
   map: MapType;
+}
+
+export interface IMarkers {
+  [name: string]: MarkerType,
 }
