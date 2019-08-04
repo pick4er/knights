@@ -85,7 +85,7 @@ const App: React.FC = () => {
     const roadsRef = database
       .ref('/')
       .orderByKey()
-      .limitToFirst(10);
+      .limitToFirst(200);
 
     roadsRef
       .once('value')
