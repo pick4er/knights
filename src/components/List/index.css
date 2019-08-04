@@ -7,12 +7,101 @@
   top: 10vh;
   z-index: 1;
   border-radius: 12px;
-  box-shadow: 0px 8px 75px -5px black;
+  box-shadow: 0px 8px 75px -5px dimgray;
   overflow: hidden;
 }
 
-.Scroller {
-  width: 100%;
-  height: 100%;
-  overflow: auto;
+.Knights-header {
+  width: 350px;
+  display: flex;
+  border-bottom: 1px solid black;
+}
+
+.Knights-header_scroller {
+  height: 30px;
+  position: fixed;
+  width: 366px;
+}
+
+.Knights-header_start,
+.Knights-header_end {
+  margin: 0px;
+  width: 38%;
+  font-size: 18px;
+  padding-left: 10px;
+  line-height: 30px;
+}
+
+.Knights-header_duration {
+  margin: 0px;
+  width: 24%;
+  text-align: center;
+  font-size: 14px;
+  padding-left: 10px;
+  line-height: 30px;
+}
+
+.Knights-scroller {
+  overflow-x: hidden;
+  overflow-y: auto;
+  position: relative;
+  margin-top: 31px;
+  height: calc(80vh - 31px);
+  width: 366px;
+  z-index: 1;
+}
+
+.Knights-list {
+  width: 350px;
+}
+
+.Knights-list_row {
+  display: flex;
+  height: 70px;
+  border-bottom: 1px solid darkgray;
+  cursor: pointer;
+}
+
+.Knights-list_row:hover {
+  background-color: #b5b5b5;
+}
+
+.Knights-list_row > div {
+  line-height: 70px;
+}
+
+.Knights-row {
+  margin: 0px;
+  width: 38%;
+  font-size: 14px;
+  padding-left: 10px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.Knights-row_station {
+  line-height: initial;
+  margin-bottom: 5px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.Knights-row_subline {
+  line-height: initial;
+  font-size: 10px;
+}
+
+.Knights-row_duration {
+  margin: 0px;
+  width: 24%;
+  text-align: center;
+  font-size: 14px;
+  padding-left: 10px;
+  line-height: 50px;
 }

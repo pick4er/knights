@@ -20,7 +20,7 @@ interface IKnightHandler {
 }
 
 let debouncedKnightHover: any;
-let debouncedKnightLeave: any;
+let debouncedKnightsLeave: any;
 
 function onKnightHover(state: IAppState): IKnightHandler {
   return function hoverHandler(knight) {
@@ -28,8 +28,9 @@ function onKnightHover(state: IAppState): IKnightHandler {
   }
 }
 
-function onKnightLeave(state: IAppState): IKnightHandler {
+function onKnightsLeave(state: IAppState): IKnightHandler {
   return function leaveHandler() {
+    debouncedKnightHover.cancel();
     state.setHoveredKnight(null);
   }
 }
@@ -46,15 +47,15 @@ const App: React.FC = () => {
   }
 
   React.useEffect(() => {
-    debouncedKnightLeave = debounce(onKnightLeave(state), 1000);
-    debouncedKnightHover = debounce(onKnightHover(state), 1000);
+    debouncedKnightsLeave = debounce(onKnightsLeave(state), 300);
+    debouncedKnightHover = debounce(onKnightHover(state), 500);
   }, []);
 
   React.useEffect(() => {
     const roadsRef = database
       .ref('/')
       .orderByKey()
-      .limitToFirst(10);
+      .limitToFirst(100);
 
     roadsRef
       .once('value')
@@ -71,7 +72,7 @@ const App: React.FC = () => {
       <List 
         knights={knights} 
         onKnightHover={debouncedKnightHover} 
-        onKnightLeave={debouncedKnightLeave}
+        onKnightsLeave={debouncedKnightsLeave}
       />
     </div>
   )

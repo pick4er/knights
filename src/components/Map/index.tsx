@@ -215,14 +215,18 @@ const Map: React.FC<IMapProps> = ({
   }, [knights, map]);
 
   React.useEffect(() => {
-    if (rides === null) return;
-    if (hoveredKnight === null) return deactivateRides(state, props);
+    deactivateRides(state, props);
+    if (
+      map === null ||
+      rides === null ||
+      hoveredKnight === null
+    ) return;
 
     const activeRadius = getKnightActiveRadius(hoveredKnight, maxTripduration);
     const hoveredKnightId = getKnightId(hoveredKnight);
 
     rides[hoveredKnightId].forEach((marker: Marker) => marker.activate(activeRadius));
-    setActivatedRides(activatedRides.concat(hoveredKnightId));
+    setActivatedRides([hoveredKnightId]);
   }, [hoveredKnight, rides]);
 
   return (
