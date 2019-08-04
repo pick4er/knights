@@ -5,3 +5,7 @@
   cursor: pointer;
   padding: 0;
 }
+
+.Marker_active {
+  z-index: 1;
+}

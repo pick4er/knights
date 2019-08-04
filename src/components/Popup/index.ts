@@ -5,6 +5,8 @@ import {
 
 import { IPopupParams } from '../../types';
 
+import './index.css'
+
 export default class Popup {
   map: MapType;
   popup: PopupType;
@@ -40,6 +42,8 @@ export default class Popup {
   }
 
   openPopup() {
+    this.activate();
+
     this.popup
       .setLngLat([
         this._coordinates[0] as number,
@@ -50,6 +54,16 @@ export default class Popup {
   }
 
   closePopup() {
+    this.deactivate();
+
     this.popup.remove();
+  }
+
+  activate() {
+    this.element.classList.add('Popup_active');
+  }
+
+  deactivate() {
+    this.element.classList.remove('Popup_active');
   }
 }

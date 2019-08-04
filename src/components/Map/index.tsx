@@ -10,11 +10,16 @@ import {
   MAP_STYLE,
 } from '../../utils/constants';
 
+import '../Popup/index.css';
+
 mapboxgl.accessToken = MAP_ACCESS_TOKEN;
+
 const MIN_ACTIVE_RADIUS = 12;
 const MAX_ACTIVE_RADIUS = 30;
+
 const WIDTH = 100;
 const HEIGHT = 100;
+
 const RADIUS = 10;
 
 interface IMapProps {
@@ -31,25 +36,39 @@ interface IMapState {
   setMarkers: any | null;
   activatedRides: string[];
   setActivatedRides: any | null;
+  maxTripduration: number;
+  minTripduration: number;
+}
+
+interface IMinMaxDurations {
+  min: number;
+  max: number;
 }
 
 function getKnightId(knight: IKnight): string {
   return `${knight['bikeid']}-${knight['starttime']}`;
 }
 
-function getMaxTripduration(knights: IKnight[]): number {
-  let maxTripduration: number = 0;
+function getMinMaxDurations(knights: IKnight[]): IMinMaxDurations {
+  let max: number = 0;
+  let min: number = 0;
 
   knights.forEach(({ tripduration }) => {
-    if (tripduration >= maxTripduration) maxTripduration = tripduration;
+    if (tripduration >= max) max = tripduration;
+    if (tripduration <= min) min = tripduration
   });
 
-  return maxTripduration;
+  return { max, min };
 }
 
-function getKnightActiveRadius(knight: IKnight, maxDuration: number): number {
-  if (maxDuration === 0) return 0;
-  return MIN_ACTIVE_RADIUS + (knight['tripduration'] * (MAX_ACTIVE_RADIUS / maxDuration));
+function getKnightActiveRadius(state: IMapState, props: IMapProps): number | null {
+  const { hoveredKnight } = props;
+  const { maxTripduration } = state;
+
+  if (maxTripduration === 0) return 0;
+  if (!hoveredKnight) return null;
+
+  return MIN_ACTIVE_RADIUS + (hoveredKnight['tripduration'] * (MAX_ACTIVE_RADIUS / maxTripduration));
 }
 
 function mapOnLoad(state: IMapState, props: IMapProps) {
@@ -62,8 +81,8 @@ function mapOnLoad(state: IMapState, props: IMapProps) {
 
     if (map === null) return;
 
-    const startPopup = new mapboxgl.Popup();
-    const endPopup = new mapboxgl.Popup();
+    const startPopup = new mapboxgl.Popup({ className: 'Popup_active' });
+    const endPopup = new mapboxgl.Popup({ className: 'Popup_active' });
 
     knights.forEach((knight): void => {
       const startStationId = knight['start station id'];
@@ -171,6 +190,7 @@ const Map: React.FC<IMapProps> = ({
   const [activatedRides, setActivatedRides] = React.useState<string[]>([]);
   const [markers, setMarkers] = React.useState<IMarkers | null>(null);
   const [maxTripduration, setMaxTripduration] = React.useState<number>(0);
+  const [minTripduration, setMinTripduration] = React.useState<number>(0);
 
   const state = {
     map,
@@ -181,6 +201,8 @@ const Map: React.FC<IMapProps> = ({
     setMarkers,
     activatedRides,
     setActivatedRides,
+    maxTripduration,
+    minTripduration,
   }
 
   const props = {
@@ -202,9 +224,10 @@ const Map: React.FC<IMapProps> = ({
   }, []);
 
   React.useEffect(() => {
-    setMaxTripduration(
-      getMaxTripduration(knights),
-    );
+    const { min, max } = getMinMaxDurations(knights);
+
+    setMaxTripduration(max);
+    setMinTripduration(min);
   }, [knights]);
 
   React.useEffect(() => {
@@ -222,7 +245,9 @@ const Map: React.FC<IMapProps> = ({
       hoveredKnight === null
     ) return;
 
-    const activeRadius = getKnightActiveRadius(hoveredKnight, maxTripduration);
+    const activeRadius = getKnightActiveRadius(state, props);
+    if (!activeRadius) return;
+
     const hoveredKnightId = getKnightId(hoveredKnight);
 
     rides[hoveredKnightId].forEach((marker: Marker) => marker.activate(activeRadius));

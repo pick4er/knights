@@ -47,7 +47,7 @@ const App: React.FC = () => {
   }
 
   React.useEffect(() => {
-    debouncedKnightsLeave = debounce(onKnightsLeave(state), 300);
+    debouncedKnightsLeave = debounce(onKnightsLeave(state), 100000);
     debouncedKnightHover = debounce(onKnightHover(state), 500);
   }, []);
 
@@ -55,7 +55,7 @@ const App: React.FC = () => {
     const roadsRef = database
       .ref('/')
       .orderByKey()
-      .limitToFirst(100);
+      .limitToFirst(10);
 
     roadsRef
       .once('value')

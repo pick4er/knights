@@ -3,7 +3,12 @@ import { Map as MapType } from 'mapbox-gl';
 import { IMarkerParams } from '../../types';
 import MarkerPopupType from '../Popup';
 
+import './index.css';
+
 export default class Marker {
+  readonly COLOR = 'rgba(255, 100, 100, 1)';
+  readonly ACTIVE_COLOR = 'rgba(200, 0, 255, 1)';
+
   popup: MarkerPopupType;
   map: MapType;
   width: number;
@@ -12,6 +17,7 @@ export default class Marker {
   private _radius: number;
   private _element: HTMLCanvasElement;
   private _context: CanvasRenderingContext2D | null;
+  private _isActive: boolean;
 
   constructor(params: IMarkerParams) {
     const { 
@@ -27,6 +33,7 @@ export default class Marker {
     this.width = width;
     this.height = height;
     this._radius = radius;
+    this._isActive = false;
     this._element = this.createElement();
     this._context = this.element.getContext('2d');
 
@@ -45,9 +52,17 @@ export default class Marker {
     return canvas;
   }
 
-  renderElement(radius: number, color: string = 'rgba(255, 100, 100, 1)') {
+  renderElement(radius: number) {
     const context = this._context;
     if (context === null) return;
+
+    let color = this.COLOR;
+    if (this._isActive) {
+      color = this.ACTIVE_COLOR;
+      this.element.classList.add('Marker_active');
+    } else if (this.element.classList.contains('Marker_active')) {
+      this.element.classList.remove('Marker_active');
+    }
 
     context.clearRect(0, 0, this.width, this.height);
     context.beginPath();
@@ -57,12 +72,14 @@ export default class Marker {
   }
 
   activate(radius: number) {
-    this.renderElement(radius, 'rgba(200, 0, 255, 1)');
+    this._isActive = true;
+    this.renderElement(radius);
     this.popup.openPopup();
     this.map.triggerRepaint();
   }
 
   deactivate() {
+    this._isActive = false;
     this.renderElement(this._radius);
     this.popup.closePopup();
     this.map.triggerRepaint();

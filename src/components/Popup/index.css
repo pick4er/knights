@@ -1,2 +1,4 @@
 
-
+.Popup_active {
+  z-index: 2;
+}
