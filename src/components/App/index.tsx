@@ -47,7 +47,7 @@ const App: React.FC = () => {
   }
 
   React.useEffect(() => {
-    debouncedKnightsLeave = debounce(onKnightsLeave(state), 100000);
+    debouncedKnightsLeave = debounce(onKnightsLeave(state), 300);
     debouncedKnightHover = debounce(onKnightHover(state), 500);
   }, []);
 
