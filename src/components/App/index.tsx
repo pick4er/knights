@@ -13,6 +13,8 @@ interface IAppState {
   setKnights: any;
   hoveredKnight: IKnight | null;
   setHoveredKnight: any;
+  isMobile: boolean;
+  setIsMobile: any;
 }
 
 interface IKnightHandler {
@@ -35,21 +37,49 @@ function onKnightsLeave(state: IAppState): IKnightHandler {
   }
 }
 
+function handleIsMobile(state: IAppState) {
+  return function isMobileHandler() {
+    const { isMobile, setIsMobile } = state;
+    if (typeof window === 'undefined') return;
+    if (window.innerWidth <= 600 && !isMobile) {
+      setIsMobile(true);
+    } else if (window.innerWidth > 600 && isMobile) {
+      setIsMobile(false);
+    }
+  }
+}
+
 const App: React.FC = () => {
   const [knights, setKnights] = React.useState([]);
   const [hoveredKnight, setHoveredKnight] = React.useState<IKnight | null>(null);
+  const [isMobile, setIsMobile] = React.useState<boolean>(false);
 
   const state = {
     knights,
     setKnights,
     hoveredKnight,
     setHoveredKnight,
+    isMobile,
+    setIsMobile,
   }
 
   React.useEffect(() => {
     debouncedKnightsLeave = debounce(onKnightsLeave(state), 300);
     debouncedKnightHover = debounce(onKnightHover(state), 500);
   }, []);
+
+  React.useEffect(() => {
+    if (window.innerWidth <= 600) setIsMobile(true); 
+  }, []);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const debouncedMobileHandler = debounce(handleIsMobile(state), 1000);
+    window.addEventListener('resize', debouncedMobileHandler);
+
+    return () => window.removeEventListener('resize', debouncedMobileHandler);
+  }, [isMobile]);
 
   React.useEffect(() => {
     const roadsRef = database
@@ -73,6 +103,7 @@ const App: React.FC = () => {
         knights={knights} 
         onKnightHover={debouncedKnightHover} 
         onKnightsLeave={debouncedKnightsLeave}
+        isMobile={isMobile}
       />
     </div>
   )

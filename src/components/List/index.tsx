@@ -5,10 +5,11 @@ import { IKnight } from '../../types';
 
 import './index.css';
 
-interface ListProps {
+interface IListProps {
   knights: IKnight[];
   onKnightHover: (knight: IKnight) => void;
-  onKnightsLeave?: () => void;
+  onKnightsLeave: () => void;
+  isMobile: boolean;
 }
 
 function prepareCoords(coord: number): number {
@@ -19,10 +20,11 @@ function prepareDate(date: string): string {
   return moment(date).format('D MMMM YYYY, HH:mm:ss');
 }
 
-const List: React.FC<ListProps> = ({ 
+const List: React.FC<IListProps> = ({ 
   knights, 
   onKnightHover, 
   onKnightsLeave,
+  isMobile,
 }) => {
   const [isListVisibleInMobileMode, setIsListVisible] = React.useState<boolean>(false);
 
@@ -35,9 +37,10 @@ const List: React.FC<ListProps> = ({
       >
         { isListVisibleInMobileMode ? 'Hide list' : 'Show list' }
       </button>
+
       <div 
         className={`Knights ${isListVisibleInMobileMode && 'Knights_visible'}`}
-        onMouseLeave={onKnightsLeave}
+        onMouseLeave={() => !isMobile && onKnightsLeave()}
       >
         <div className="Knights-header_scroller">
           <div className="Knights-header">
@@ -58,7 +61,8 @@ const List: React.FC<ListProps> = ({
                 return (
                   <div
                     key={`${bikeid} ${starttime}`} 
-                    onMouseEnter={() => onKnightHover(knight)}
+                    onMouseEnter={() => !isMobile && onKnightHover(knight)}
+                    onClick={() => isMobile && onKnightHover(knight)}
                     className="Knights-list_row"
                   >
                     <div 
