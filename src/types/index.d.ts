@@ -1,3 +1,10 @@
+import { 
+  Map as MapType,
+  Popup as PopupType,
+} from 'mapbox-gl';
+
+import MarkerPopupType from '../components/Popup';
+import MarkerType from '../components/Marker';
 
 export interface IKnight {
   ['bikeid']: number;
@@ -25,11 +32,20 @@ export interface IGeoJsonKnight {
   geometry: object;
 }
 
-export interface IPulsingDot {
-  width: number;
-  height: number;
-  data: any;
-  context: CanvasRenderingContext2D | null;
-  onAdd();
-  render(): boolean;
+export interface IMarkerParams {
+  map: MapType;
+  popup: MarkerPopupType;
+  radius?: number;
+  activeRadius: number;
+}
+
+export interface IRides {
+  [name: string]: MarkerType[];
+}
+
+export interface IPopupParams {
+  popup: PopupType;
+  content: string;
+  coordinates: number[];
+  map: MapType;
 }

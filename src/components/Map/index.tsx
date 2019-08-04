@@ -2,17 +2,18 @@ import React from 'react';
 import mapboxgl, { Map as MapType } from 'mapbox-gl';
 
 import Marker from '../Marker';
+import Popup from '../Popup';
 
-import { 
-  IKnight,
-  IPulsingDot,
-} from '../../types';
+import { IRides, IKnight } from '../../types';
 import { 
   MAP_ACCESS_TOKEN,
   MAP_STYLE,
 } from '../../utils/constants';
 
 mapboxgl.accessToken = MAP_ACCESS_TOKEN;
+const MIN_ACTIVE_RADIUS = 12;
+const MAX_ACTIVE_RADIUS = 30;
+const RADIUS = 10;
 
 interface IMapProps {
   knights: IKnight[];
@@ -22,102 +23,80 @@ interface IMapProps {
 interface IMapState {
   map: MapType | null;
   setMap: any | null;
-  markers: IRides | null;
-  setMarkers: any | null;
-  activatedMarkers: string[];
-  setActivatedMarkers: any | null;
-}
-
-function encodeKnightsToGeoJson(knights: IKnight[]): any[] {
-  return knights.map(knight => ({
-    type: 'Feature',
-    properties: {
-      title: knight['end station name'],
-      iconSize: [20, 20],
-    },
-    geometry: {
-      type: 'Point',
-      coordinates: [
-        knight['end station longitude'], 
-        knight['end station latitude'],
-      ],
-    },
-  }));
-}
-
-function getPulsingDot(map: MapType): IPulsingDot {
-  const size = 100;
-
-  return {
-    width: size,
-    height: size,
-    data: new Uint8Array(size * size * 4),
-    context: null,
-
-    onAdd() {
-      let canvas = document.createElement('canvas');
-      canvas.width = this.width;
-      canvas.height = this.height;
-      this.context = canvas.getContext('2d');
-    },
-
-    render() {
-      let duration = 1000;
-      let t = (performance.now() % duration) / duration;
-       
-      let radius = size / 2 * 0.3;
-      let outerRadius = size / 2 * 0.7 * t + radius;
-      let context = this.context;
-
-      if (context === null) return false;
-
-      // draw outer circle
-      context.clearRect(0, 0, this.width, this.height);
-      context.beginPath();
-      context.arc(this.width / 2, this.height / 2, outerRadius, 0, Math.PI * 2);
-      context.fillStyle = 'rgba(255, 200, 200,' + (1 - t) + ')';
-      context.fill();
-
-      // draw inner circle
-      context.beginPath();
-      context.arc(this.width / 2, this.height / 2, radius, 0, Math.PI * 2);
-      context.fillStyle = 'rgba(255, 100, 100, 1)';
-      context.strokeStyle = 'white';
-      context.lineWidth = 2 + 4 * (1 - t);
-      context.fill();
-      context.stroke();
-
-      // update this image's data with data from the canvas
-      this.data = context.getImageData(0, 0, this.width, this.height).data;
-
-      // keep the map repainting
-      map.triggerRepaint();
-
-      // return `true` to let the map know that the image was updated
-      return true;
-    }
-  }
-}
-
-interface IRides {
-  [name: string]: any;
+  rides: IRides | null;
+  setRides: any | null;
+  activatedRides: string[];
+  setActivatedRides: any | null;
 }
 
 function getKnightId(knight: IKnight): string {
   return `${knight['bikeid']}-${knight['starttime']}`;
 }
 
+function getMaxTripduration(knights: IKnight[]): number {
+  let maxTripduration: number = 0;
+
+  knights.forEach(({ tripduration }) => {
+    if (tripduration >= maxTripduration) maxTripduration = tripduration;
+  });
+
+  return maxTripduration;
+}
+
+function getKnightActiveRadius(knight: IKnight, maxDuration: number): number {
+  if (maxDuration === 0) return 0;
+  return MIN_ACTIVE_RADIUS + (knight['tripduration'] * (MAX_ACTIVE_RADIUS / maxDuration));
+}
+
 function mapOnLoad(state: IMapState, props: IMapProps) {
   return function loadHandler() {
-    const { map, setMarkers } = state;
+    const { map, setRides } = state;
     const { knights } = props;
     const knightRides: IRides = {};
 
     if (map === null) return;
 
+    const maxTripduration = getMaxTripduration(knights);
+    const startPopup = new mapboxgl.Popup();
+    const endPopup = new mapboxgl.Popup();
+
     knights.forEach(knight => {
-      const startStationMarker = new Marker(knight, map);
-      const endStationMarker = new Marker(knight, map);
+      const activeRadius = getKnightActiveRadius(
+        knight, 
+        maxTripduration,
+      );
+
+      const startMarkerPopup = new Popup({
+        map: map,
+        popup: startPopup,
+        content: knight['start station name'],
+        coordinates: [
+          knight['start station longitude'] as number, 
+          knight['start station latitude'] as number,
+        ],
+      });
+      const endMarkerPopup = new Popup({
+        map: map,
+        popup: endPopup,
+        content: knight['end station name'],
+        coordinates: [
+          knight['end station longitude'] as number, 
+          knight['end station latitude'] as number,
+        ],
+      });
+
+      const startStationMarker = new Marker({
+        map, 
+        activeRadius,
+        radius: RADIUS,
+        popup: startMarkerPopup,
+      });
+      const endStationMarker = new Marker({
+        map, 
+        activeRadius,
+        radius: RADIUS,
+        popup: endMarkerPopup,
+      });
 
       knightRides[getKnightId(knight)] = [
         startStationMarker, 
@@ -139,21 +118,21 @@ function mapOnLoad(state: IMapState, props: IMapProps) {
         .addTo(map);
     });
 
-    setMarkers(knightRides);
+    setRides(knightRides);
   }
 }
 
-function freeActivatedMarkers(state: IMapState, props: IMapProps): void {
+function deactivateRides(state: IMapState, props: IMapProps): void {
   const { 
-    markers,
-    activatedMarkers, 
-    setActivatedMarkers,
+    rides,
+    activatedRides, 
+    setActivatedRides,
   } = state;
 
-  if (markers === null) return;
+  if (rides === null) return;
 
-  activatedMarkers.forEach(markerId => {
-    markers[markerId].forEach((marker: IRides) => marker.deactivate());
+  activatedRides.forEach(markerId => {
+    rides[markerId].forEach((marker: Marker) => marker.deactivate());
   });
 }
 
@@ -162,16 +141,16 @@ const Map: React.FC<IMapProps> = ({
   hoveredKnight = null,
 }) => {
   const [map, setMap] = React.useState<MapType | null>(null);
-  const [markers, setMarkers] = React.useState<IRides | null>(null);
-  const [activatedMarkers, setActivatedMarkers] = React.useState<string[]>([]);
+  const [rides, setRides] = React.useState<IRides | null>(null);
+  const [activatedRides, setActivatedRides] = React.useState<string[]>([]);
 
   const state = {
     map,
     setMap,
-    markers,
-    setMarkers,
-    activatedMarkers,
-    setActivatedMarkers,
+    rides,
+    setRides,
+    activatedRides,
+    setActivatedRides,
   }
 
   const props = {
@@ -184,6 +163,8 @@ const Map: React.FC<IMapProps> = ({
       new mapboxgl.Map({
         container: 'map',
         style: MAP_STYLE,
+        center: [-74.0334588, 40.7162469],
+        zoom: 12,
       })
     );
 
@@ -193,20 +174,18 @@ const Map: React.FC<IMapProps> = ({
   React.useEffect(() => {
     if (map === null) return;
     if (knights.length === 0) return;
+
     map.on('load', mapOnLoad(state, props));
   }, [knights, map]);
 
   React.useEffect(() => {
-    if (markers === null) return;
-    if (hoveredKnight === null) {
-      freeActivatedMarkers(state, props);
-      return;
-    };
+    if (rides === null) return;
+    if (hoveredKnight === null) return deactivateRides(state, props);
 
     const hoveredKnightId = getKnightId(hoveredKnight);
-    markers[hoveredKnightId].forEach((marker: IRides) => marker.activate());
-    setActivatedMarkers(activatedMarkers.concat(hoveredKnightId));
-  }, [hoveredKnight, markers]);
+    rides[hoveredKnightId].forEach((marker: Marker) => marker.activate());
+    setActivatedRides(activatedRides.concat(hoveredKnightId));
+  }, [hoveredKnight, rides]);
 
   return (
     <div />

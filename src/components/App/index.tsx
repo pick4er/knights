@@ -8,23 +8,53 @@ import { IKnight } from '../../types';
 import { database } from '../../utils/firebase';
 import './index.css';
 
+interface IAppState {
+  knights: any[];
+  setKnights: any;
+  hoveredKnight: IKnight | null;
+  setHoveredKnight: any;
+}
+
+interface IKnightHandler {
+  (knight: any): void;
+}
+
 let debouncedKnightHover: any;
 let debouncedKnightLeave: any;
+
+function onKnightHover(state: IAppState): IKnightHandler {
+  return function hoverHandler(knight) {
+    state.setHoveredKnight(knight);
+  }
+}
+
+function onKnightLeave(state: IAppState): IKnightHandler {
+  return function leaveHandler() {
+    state.setHoveredKnight(null);
+  }
+}
 
 const App: React.FC = () => {
   const [knights, setKnights] = React.useState([]);
   const [hoveredKnight, setHoveredKnight] = React.useState<IKnight | null>(null);
 
+  const state = {
+    knights,
+    setKnights,
+    hoveredKnight,
+    setHoveredKnight,
+  }
+
   React.useEffect(() => {
-    debouncedKnightHover = debounce(setHoveredKnight, 1000);
-    debouncedKnightLeave = debounce(() => setHoveredKnight(null), 1000);
+    debouncedKnightLeave = debounce(onKnightLeave(state), 1000);
+    debouncedKnightHover = debounce(onKnightHover(state), 1000);
   }, []);
 
   React.useEffect(() => {
     const roadsRef = database
       .ref('/')
       .orderByKey()
-      .limitToFirst(100);
+      .limitToFirst(10);
 
     roadsRef
       .once('value')
@@ -40,7 +70,7 @@ const App: React.FC = () => {
       />
       <List 
         knights={knights} 
-        onKnightHover={(knight) => debouncedKnightHover(knight)} 
+        onKnightHover={debouncedKnightHover} 
         onKnightLeave={debouncedKnightLeave}
       />
     </div>

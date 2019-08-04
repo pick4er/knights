@@ -1,42 +1,75 @@
 import { Map as MapType } from 'mapbox-gl';
-import { IKnight } from '../../types';
 
-function createElement(): HTMLElement {
-  let el = document.createElement('div');
-  el.className = 'Marker';
-  el.style.backgroundImage = 'url(https://placekitten.com/g/10/10/)';
-  el.style.width = '10px';
-  el.style.height = '10px';
-
-  return el;
-}
+import { IMarkerParams } from '../../types';
+import MarkerPopupType from '../Popup';
 
 export default class Marker {
-  element: HTMLElement;
-  knight: IKnight;
+  popup: MarkerPopupType;
   map: MapType;
 
-  constructor(knight: IKnight, map: MapType) {
-    this.knight = knight;
-    this.element = createElement();
+  private _radius: number;
+  private _activeRadius: number;
+  private _element: HTMLCanvasElement;
+  private _context: CanvasRenderingContext2D | null;
+
+  constructor(params: IMarkerParams) {
+    const { 
+      map,
+      popup,
+      radius = 10,
+      activeRadius,
+    } = params;
+
     this.map = map;
+    this.popup = popup;
+    this._radius = radius;
+    this._activeRadius = activeRadius;
+    this._element = this.createElement();
+    this._context = this.element.getContext('2d');
+
+    this.renderElement(this._radius);
   }
 
-  activate(): void {
-    const el = this.element;
+  get element(): HTMLCanvasElement {
+    return this._element;
+  }
 
-    el.style.width = '50px';
-    el.style.height = '50px';
+  get width(): number {
+    return this._activeRadius * 2 + 3; // a bit of spacing
+  }
 
+  get height(): number {
+    return this._activeRadius * 2 + 3; // a bit of spacing
+  }
+
+  createElement(): HTMLCanvasElement {
+    let canvas = document.createElement('canvas');
+    canvas.width = this.width;
+    canvas.height = this.height;
+
+    return canvas;
+  }
+
+  renderElement(radius: number, color: string = 'rgba(255, 100, 100, 1)') {
+    const context = this._context;
+    if (context === null) return;
+
+    context.clearRect(0, 0, this.width, this.height);
+    context.beginPath();
+    context.arc(this.width / 2, this.height / 2, radius, 0, Math.PI * 2);
+    context.fillStyle = color;
+    context.fill();
+  }
+
+  activate() {
+    this.renderElement(this._activeRadius, 'rgba(255, 100, 200, 1)');
+    this.popup.openPopup();
     this.map.triggerRepaint();
   }
 
-  deactivate(): void {
-    const el = this.element;
-
-    el.style.width = '10px';
-    el.style.height = '10px';
-
+  deactivate() {
+    this.renderElement(this._radius);
+    this.popup.closePopup();
     this.map.triggerRepaint();
   }
 }
