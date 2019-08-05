@@ -24,16 +24,16 @@ interface IKnightHandler {
 let debouncedKnightHover: any;
 let debouncedKnightsLeave: any;
 
-function onKnightHover(state: IAppState): IKnightHandler {
+function onKnightHover(setHoveredKnight: any): IKnightHandler {
   return function hoverHandler(knight) {
-    state.setHoveredKnight(knight);
+    setHoveredKnight(knight);
   }
 }
 
-function onKnightsLeave(state: IAppState): IKnightHandler {
+function onKnightsLeave(setHoveredKnight: any): IKnightHandler {
   return function leaveHandler() {
     debouncedKnightHover.cancel();
-    state.setHoveredKnight(null);
+    setHoveredKnight(null);
   }
 }
 
@@ -64,9 +64,13 @@ const App: React.FC = () => {
   }
 
   React.useEffect(() => {
-    debouncedKnightsLeave = debounce(onKnightsLeave(state), 300);
-    debouncedKnightHover = debounce(onKnightHover(state), 500);
-  }, []);
+    debouncedKnightsLeave = debounce(
+      onKnightsLeave(setHoveredKnight), 300,
+    );
+    debouncedKnightHover = debounce(
+      onKnightHover(setHoveredKnight), 500,
+    );
+  }, [setHoveredKnight]);
 
   React.useEffect(() => {
     if (window.innerWidth <= 600) setIsMobile(true); 
@@ -79,7 +83,7 @@ const App: React.FC = () => {
     window.addEventListener('resize', debouncedMobileHandler);
 
     return () => window.removeEventListener('resize', debouncedMobileHandler);
-  }, [isMobile]);
+  }, [state]);
 
   React.useEffect(() => {
     const roadsRef = database

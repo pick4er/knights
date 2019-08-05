@@ -91,6 +91,7 @@ function mapOnLoad(state: IMapState, props: IMapProps) {
       let startMarkerPopup;
       let startStationMarker;
 
+      // remove duplicate markers
       if (!markers[startStationId]) {
         startMarkerPopup = new Popup({
           map: map,
@@ -119,12 +120,14 @@ function mapOnLoad(state: IMapState, props: IMapProps) {
           ])
           .addTo(map);
       } else {
+        // to register a ride
         startStationMarker = markers[startStationId];
       }
 
       let endMarkerPopup;
       let endStationMarker;
 
+      // remove duplicate markers
       if (!markers[endStationId]) {
         endMarkerPopup = new Popup({
           map: map,
@@ -153,6 +156,7 @@ function mapOnLoad(state: IMapState, props: IMapProps) {
           ])
           .addTo(map);
       } else {
+        // to register a ride
         endStationMarker = markers[endStationId];
       }
 
@@ -170,8 +174,7 @@ function mapOnLoad(state: IMapState, props: IMapProps) {
 function deactivateRides(state: IMapState, props: IMapProps): void {
   const { 
     rides,
-    activatedRides, 
-    setActivatedRides,
+    activatedRides,
   } = state;
 
   if (rides === null) return;
@@ -219,9 +222,14 @@ const Map: React.FC<IMapProps> = ({
         zoom: 12,
       })
     );
-
-    return () => map!.remove();
   }, []);
+
+  React.useEffect(() => {
+    return () => {
+      if (map === null) return;
+      map.remove();
+    }
+  }, [map]);
 
   React.useEffect(() => {
     const { min, max } = getMinMaxDurations(knights);
@@ -231,14 +239,21 @@ const Map: React.FC<IMapProps> = ({
   }, [knights]);
 
   React.useEffect(() => {
+    const { map } = state;
+    const { knights } = props;
+
     if (map === null) return;
     if (knights.length === 0) return;
 
     map.on('load', mapOnLoad(state, props));
-  }, [knights, map]);
+  }, [state, props]);
 
   React.useEffect(() => {
+    const { hoveredKnight } = props;
+    const { rides, map } = state;
+
     deactivateRides(state, props);
+
     if (
       map === null ||
       rides === null ||
@@ -252,7 +267,7 @@ const Map: React.FC<IMapProps> = ({
 
     rides[hoveredKnightId].forEach((marker: Marker) => marker.activate(activeRadius));
     setActivatedRides([hoveredKnightId]);
-  }, [hoveredKnight, rides]);
+  }, [state, props]);
 
   return (
     <div />
